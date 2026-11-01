@@ -1,8 +1,32 @@
-import express, { Request, Response } from 'express';
+/**
+ * @file server.ts
+ * @description Express API server for Celebration Studio.
+ *
+ * Provides AI-powered endpoints for:
+ * - General chat with the Sarah Jenkins persona (`/api/chat`)
+ * - Full celebration plan generation (`/api/generate-plan`)
+ * - Scenario trade-off analysis (`/api/analyze-scenario`)
+ * - Vendor RFP generation (`/api/generate-rfp`)
+ * - Vendor proposal auditing (`/api/audit-proposal`)
+ *
+ * In development the server also hosts the Vite dev middleware.
+ * In production it serves the pre-built `dist/` SPA.
+ * On Vercel the app is exported for use by `api/index.ts`.
+ */
+import express, { type Request, type Response } from 'express';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { sanitizePromptString, extractAndParseJSON } from './src/utils/promptSanitizer.js';
+import {
+  RATE_LIMIT_WINDOW_MS,
+  RATE_LIMIT_MAX_REQUESTS,
+  RATE_LIMIT_CLEANUP_INTERVAL_MS,
+  MAX_CHAT_MESSAGE_LENGTH,
+  MAX_HISTORY_ITEMS,
+  GEMINI_MODEL,
+} from './src/constants.js';
 
 dotenv.config();
 
@@ -10,7 +34,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3000;
+/** Port the Express server binds to in local / container environments. */
+const PORT = Number(process.env.PORT ?? 3000);
 
 // Security hardening: hide server engine header and trust standard reverse proxies
 app.disable('x-powered-by');
@@ -53,19 +78,11 @@ app.use((req, res, next) => {
 // Security hardening: restrict request body size to prevent memory exhaustion
 app.use(express.json({ limit: '500kb' }));
 
-// Helper: sanitize user strings against prompt injection and excessive payload size
-export function sanitizePromptString(input: unknown, maxLength = 2000): string {
-  if (typeof input !== 'string') return '';
-  return input
-    .slice(0, maxLength)
-    .replace(/(?:ignore\s+all\s+previous\s+instructions|system\s*:\s*|role\s*:\s*system)/gi, '[sanitized]')
-    .trim();
-}
+// sanitizePromptString and extractAndParseJSON are imported from src/utils/promptSanitizer.ts
 
 // In-memory rate limiter to protect AI endpoints from abuse and runaway costs
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX_REQUESTS = 40; // 40 requests/min per IP
+// RATE_LIMIT_WINDOW_MS and RATE_LIMIT_MAX_REQUESTS imported from src/constants.ts
 
 const apiRateLimiter = (req: Request, res: Response, next: () => void) => {
   const ip = req.ip || req.socket.remoteAddress || 'unknown';
@@ -89,7 +106,7 @@ const apiRateLimiter = (req: Request, res: Response, next: () => void) => {
 
 app.use('/api', apiRateLimiter);
 
-// Clean expired rate limit records periodically
+/** Periodically removes expired rate-limit records to prevent memory growth. */
 const rateLimitCleaner = setInterval(() => {
   const now = Date.now();
   for (const [ip, record] of rateLimitMap.entries()) {
@@ -97,7 +114,7 @@ const rateLimitCleaner = setInterval(() => {
       rateLimitMap.delete(ip);
     }
   }
-}, 5 * 60 * 1000);
+}, RATE_LIMIT_CLEANUP_INTERVAL_MS);
 rateLimitCleaner.unref?.();
 
 // API Health check endpoint (for uptime monitoring and Vercel deployment verification)
@@ -155,36 +172,7 @@ CRITICAL VOICE & HUMAN COMMUNICATION RULES:
    2. [Clear next step]
 `;
 
-// Helper: safe JSON extractor that tolerates markdown fences and conversational preambles
-export function extractAndParseJSON<T>(rawText: string, fallbackDefault: T): T {
-  if (!rawText || typeof rawText !== 'string') {
-    return fallbackDefault;
-  }
-
-  // 1. Direct parse after stripping code fences and whitespace
-  const stripped = rawText
-    .replace(/^```(?:json)?\s*/im, '')
-    .replace(/\s*```$/m, '')
-    .trim();
-
-  try {
-    return JSON.parse(stripped);
-  } catch {
-    // 2. Regex extraction of outermost JSON object or array
-    const jsonMatch = rawText.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
-    if (jsonMatch && jsonMatch[0]) {
-      try {
-        return JSON.parse(jsonMatch[0]);
-      } catch (innerErr) {
-        console.warn('Regex-matched JSON could not be parsed:', innerErr);
-      }
-    }
-  }
-
-  console.warn('Failed to parse JSON from AI response, using fallback default.');
-  return fallbackDefault;
-}
-
+/** Performs a Gemini AI content generation call with the given prompt and system instruction. */
 // Helper: safe Gemini generateContent call with fallback
 async function generateAIContent(prompt: string, systemInstruction = EVENTOS_SYSTEM_PROMPT): Promise<string> {
   if (!apiKey) {
@@ -192,20 +180,18 @@ async function generateAIContent(prompt: string, systemInstruction = EVENTOS_SYS
   }
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3.8-flash',
+    model: GEMINI_MODEL,
     contents: prompt,
-    config: {
-      systemInstruction: systemInstruction,
-    },
+    config: { systemInstruction },
   });
 
-  return response.text || '';
+  return response.text ?? '';
 }
 
+// ---------------------------------------------------------------------------
 // 1. General EventOS Chat Endpoint
-const MAX_CHAT_MESSAGE_LENGTH = 2000;
-const MAX_HISTORY_ITEMS = 20;
-
+// MAX_CHAT_MESSAGE_LENGTH and MAX_HISTORY_ITEMS imported from src/constants.ts
+// ---------------------------------------------------------------------------
 app.post('/api/chat', async (req: Request, res: Response) => {
   try {
     const { message, eventContext, history } = req.body;

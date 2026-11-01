@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractAndParseJSON } from '../../server';
+import { extractAndParseJSON } from '../utils/promptSanitizer';
 
 describe('Server LLM JSON Extractor & Sanitizer', () => {
   it('parses pristine JSON objects directly', () => {
