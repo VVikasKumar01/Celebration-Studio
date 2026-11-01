@@ -1,0 +1,8 @@
+{
+  "name": "Remix EventOS AI",
+  "description": "Intelligent Celebration \u0026 Event Planning Operating System with real-world constraint discovery, dynamic budget rebalancing, dependency timeline mapping, scenario trade-off engine, and vendor quotation comparison.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

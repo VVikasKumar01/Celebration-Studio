@@ -1,0 +1,7 @@
+# Celebration Studio Robots Configuration
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Host & Sitemap Specification
+Sitemap: https://celebration-studio-nine.vercel.app/sitemap.xml

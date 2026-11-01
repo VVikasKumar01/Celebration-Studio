@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+  <!-- Primary Application Entry Point -->
+  <url>
+    <loc>https://celebration-studio-nine.vercel.app/</loc>
+    <lastmod>2026-10-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Vision & Atmosphere Discovery Section -->
+  <url>
+    <loc>https://celebration-studio-nine.vercel.app/#discovery</loc>
+    <lastmod>2026-10-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Smart Budget & Balance Calculator Section -->
+  <url>
+    <loc>https://celebration-studio-nine.vercel.app/#budget</loc>
+    <lastmod>2026-10-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Flow & Timeline Dependency Engine Section -->
+  <url>
+    <loc>https://celebration-studio-nine.vercel.app/#timeline</loc>
+    <lastmod>2026-10-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Peace-of-Mind Backups & Contingency Scenarios Section -->
+  <url>
+    <loc>https://celebration-studio-nine.vercel.app/#scenarios</loc>
+    <lastmod>2026-10-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Verified Dream Vendors & Forensic Quote Auditing Section -->
+  <url>
+    <loc>https://celebration-studio-nine.vercel.app/#vendors</loc>
+    <lastmod>2026-10-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+</urlset>
